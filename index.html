@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle HiveMQ - ESP32</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f9;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <button id="btnEnviar" disabled>Conectando ao HiveMQ...</button>
+    <div id="status">Status: Desconectado</div>
+
+    <script>
+        // Configurações do seu HiveMQ Cloud usando WebSockets (Porta 8884)
+        const host = '0e30f6e5a0a84184a8cc1139f3c59545.s1.eu.hivemq.cloud';
+        const port = '8884'; 
+        const connectUrl = `wss://${host}:${port}/mqtt`;
+
+        const options = {
+            clientId: 'html_client_' + Math.random().toString(16).substr(2, 8),
+            clean: true,
+            connectTimeout: 4000,
+            username: 'esp32',
+            password: 'Carro2002',
+        };
+
+        const btn = document.getElementById('btnEnviar');
+        const statusDiv = document.getElementById('status');
+
+        console.log('Tentando conectar...');
+        const client = mqtt.connect(connectUrl, options);
+
+        // Quando conectar com sucesso
+        client.on('connect', () => {
+            console.log('✅ Conectado ao HiveMQ via WebSocket!');
+            statusDiv.innerText = 'Status: Conectado!';
+            statusDiv.style.color = 'green';
+            btn.innerText = 'Enviar Mensagem';
+            btn.disabled = false; // Ativa o botão
+        });
+
+        // Evento do clique no botão
+        btn.addEventListener('click', () => {
+            const topico = 'esp32/comandos';
+            const mensagem = 'você apertou o botão';
+
+            client.publish(topico, mensagem, { qos: 1 }, (err) => {
+                if (err) {
+                    console.error('Erro ao enviar:', err);
+                    alert('Erro ao enviar mensagem.');
+                } else {
+                    console.log(`Mensagem enviada para [${topico}]: ${mensagem}`);
+                    statusDiv.innerText = 'Status: Mensagem enviada!';
+                    setTimeout(() => { statusDiv.innerText = 'Status: Conectado!'; }, 2000);
+                }
+            });
+        });
+
+        // Tratamento de erro
+        client.on('error', (err) => {
+            console.error('❌ Erro:', err);
+            statusDiv.innerText = 'Status: Erro na conexão';
+            statusDiv.style.color = 'red';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+const mqtt = require('mqtt');
+
+// Substitua pelo seu endereço de endpoint do HiveMQ Cloud
+const host = '0e30f6e5a0a84184a8cc1139f3c59545.s1.eu.hivemq.cloud'; 
+const port = '8884'; // Porta WebSockets Seguro do HiveMQ
+const connectUrl = `wss://${host}:${port}/mqtt`; // Mudou para wss:// e adicionou /mqtt no final
+
+const options = {
+  clientId: 'javascript_client_' + Math.random().toString(16).substr(2, 8),
+  clean: true,
+  connectTimeout: 4000,
+  // Suas credenciais fornecidas
+  username: 'esp32',
+  password: 'Carro2002',
+  reconnectPeriod: 1000,
+};
+
+// Inicializa a conexão
+const client = mqtt.connect(connectUrl, options);
+
+// Evento: Conectado com sucesso
+client.on('connect', () => {
+  console.log('✅ Conectado ao HiveMQ com sucesso!');
+
+  // Se inscrever em um tópico (ex: comandos para o ESP32)
+  client.subscribe('esp32/comandos', (err) => {
+    if (!err) {
+      console.log('Inscrito no tópico: esp32/comandos');
+      
+      // Enviar uma mensagem de teste (ex: status do carro)
+      client.publish('esp32/status', 'Carro ligado', { qos: 1 }, (error) => {
+        if (error) console.error('Erro ao publicar:', error);
+        else console.log('Mensagem enviada com sucesso!');
+      });
+    }
+  });
+  
+});
+
+// Evento: Recebendo mensagem de um tópico inscrito
+client.on('message', (topic, message) => {
+  console.log(`📩 Nova mensagem no tópico [${topic}]: ${message.toString()}`);
+});
+
+// Evento: Tratamento de erros
+client.on('error', (err) => {
+  console.error('❌ Erro na conexão:', err);
+  client.end();
+});
+
+client.publish('esp32/comandos', "oi");
