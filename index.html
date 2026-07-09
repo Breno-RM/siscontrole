@@ -45,6 +45,11 @@
         .sidebar button:hover {
             background-color: #34495e;
         }
+        .sidebar .divider {
+            margin: 20px 0;
+            border: 0;
+            border-top: 1px solid #34495e;
+        }
         .main-content {
             flex: 1;
             padding: 20px;
@@ -195,6 +200,23 @@
             height: 400px;
             width: 100%;
         }
+
+        /* Estilo do Log de Eventos */
+        .log-container {
+            height: 180px;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-y: auto;
+            border: 1px solid #444;
+        }
+        .log-entry { margin-bottom: 5px; font-size: 14px; }
+        .log-info { color: #569cd6; } /* Azul */
+        .log-alert { color: #f44747; font-weight: bold; } /* Vermelho */
+        .log-success { color: #4CAF50; } /* Verde */
+        
     </style>
 </head>
 <body>
@@ -204,6 +226,11 @@
         <button onclick="switchScreen('controle')">Controle PID</button>
         <button onclick="switchScreen('pzem-screen')">Monitor de Energia</button>
         <button onclick="switchScreen('config')">Configurações</button>
+        
+        <hr class="divider">
+        
+        <!-- Novo botão de exportação -->
+        <button onclick="exportarCSV()" style="color: #2ecc71; font-weight: bold;">📥 Exportar CSV</button>
     </div>
 
     <div class="main-content">
@@ -263,6 +290,15 @@
                     <canvas id="tempChart"></canvas>
                 </div>
             </div>
+
+            <!-- Novo Log de Alarmes e Eventos -->
+            <div class="card">
+                <h3>Log de Eventos</h3>
+                <br>
+                <div id="log-box" class="log-container">
+                    <!-- Logs serão inseridos aqui pelo JavaScript -->
+                </div>
+            </div>
         </div>
 
         <!-- TELA 2: PZEM / ENERGIA -->
@@ -297,7 +333,6 @@
                     <div class="chart-container" style="height: 300px;">
                         <canvas id="voltChart"></canvas>
                     </div>
-                    <!-- Nova div para exibir o valor em texto -->
                     <div id="val-volt" class="value-display" style="margin-top: 15px;">-- V</div>
                 </div>
                 <!-- Gráfico de Corrente -->
@@ -306,7 +341,6 @@
                     <div class="chart-container" style="height: 300px;">
                         <canvas id="currChart"></canvas>
                     </div>
-                    <!-- Nova div para exibir o valor em texto -->
                     <div id="val-curr" class="value-display" style="margin-top: 15px;">-- A</div>
                 </div>
             </div>
@@ -331,120 +365,87 @@
             document.getElementById(screenId).classList.add('active');
         }
 
+        // --- SISTEMA DE LOGS E DATALOGGER ---
+        let historicoDados = [];
+        let ultimaLeituraEnergia = { tensao: "0.0", corrente: "0.0", potencia: "0.0" };
+        let alarmeTempAtivo = false;
+
+        function registrarLog(mensagem, tipo = 'INFO') {
+            const logBox = document.getElementById('log-box');
+            const agora = new Date();
+            const hora = `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}:${String(agora.getSeconds()).padStart(2, '0')}`;
+            
+            const div = document.createElement('div');
+            div.className = 'log-entry';
+            
+            let classeCor = 'log-info';
+            if(tipo === 'ALERTA') classeCor = 'log-alert';
+            if(tipo === 'SUCESSO') classeCor = 'log-success';
+
+            div.innerHTML = `[${hora}] <span class="${classeCor}">${tipo}</span>: ${mensagem}`;
+            logBox.appendChild(div);
+            
+            // Rola automaticamente para a última mensagem
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        function exportarCSV() {
+            if (historicoDados.length === 0) {
+                alert("Nenhum dado registrado ainda para exportar.");
+                return;
+            }
+
+            let csvContent = "Hora,Setpoint(C),Temperatura(C),Lampada(%),Ventoinha(%),Tensao(V),Corrente(A),Potencia(W)\n";
+            historicoDados.forEach(row => {
+                csvContent += `${row.tempo},${row.setpoint},${row.temperatura},${row.lampada},${row.ventoinha},${row.tensao},${row.corrente},${row.potencia}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            
+            link.setAttribute("href", url);
+            link.setAttribute("download", "historico_ensaio_pid.csv");
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            registrarLog('Arquivo CSV exportado com sucesso.', 'SUCESSO');
+        }
+
         // --- Configuração dos Gráficos ---
-        // 1. Gráfico de Temperatura
+        // (Código dos gráficos mantido igual ao original)
         const ctxTemp = document.getElementById('tempChart').getContext('2d');
         const tempChart = new Chart(ctxTemp, {
             type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Temperatura (°C)',
-                    data: [],
-                    borderColor: '#e74c3c',
-                    backgroundColor: 'rgba(231, 76, 60, 0.2)',
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.3
-                },
-                {
-                    label: 'Setpoint',
-                    data: [],
-                    borderColor: '#3498db',
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    fill: false,
-                    pointRadius: 0
-                }]
-            },
-            options: {
-                animation: false,
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: { title: { display: true, text: 'Tempo' } },
-                    y: { title: { display: true, text: 'Temperatura (°C)'}, suggestedMin: 20, suggestedMax: 45 }
-                }
-            }
+            data: { labels: [], datasets: [{ label: 'Temperatura (°C)', data: [], borderColor: '#e74c3c', backgroundColor: 'rgba(231, 76, 60, 0.2)', borderWidth: 2, fill: false, tension: 0.3 }, { label: 'Setpoint', data: [], borderColor: '#3498db', borderWidth: 2, borderDash: [5, 5], fill: false, pointRadius: 0 }] },
+            options: { animation: false, responsive: true, maintainAspectRatio: false, scales: { x: { title: { display: true, text: 'Tempo' } }, y: { title: { display: true, text: 'Temperatura (°C)'}, suggestedMin: 20, suggestedMax: 45 } } }
         });
 
-        // 2. Gráfico de Tensão (PZEM) - Removido min/max fixos para aceitar 127V ou 220V automaticamente
         const ctxVolt = document.getElementById('voltChart').getContext('2d');
         const voltChart = new Chart(ctxVolt, {
             type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Tensão (V)',
-                    data: [],
-                    borderColor: '#f1c40f',
-                    backgroundColor: 'rgba(241, 196, 15, 0.2)',
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.3
-                }]
-            },
-            options: {
-                animation: false,
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: { title: { display: true, text: 'Tempo' } },
-                    y: { title: { display: true, text: 'Volts' }, suggestedMin: 200, suggestedMax: 240  }
-                }
-            }
+            data: { labels: [], datasets: [{ label: 'Tensão (V)', data: [], borderColor: '#f1c40f', backgroundColor: 'rgba(241, 196, 15, 0.2)', borderWidth: 2, fill: false, tension: 0.3 }] },
+            options: { animation: false, responsive: true, maintainAspectRatio: false, scales: { x: { title: { display: true, text: 'Tempo' } }, y: { title: { display: true, text: 'Volts' }, suggestedMin: 200, suggestedMax: 240 } } }
         });
 
-        // 3. Gráfico de Corrente (PZEM)
         const ctxCurr = document.getElementById('currChart').getContext('2d');
         const currChart = new Chart(ctxCurr, {
             type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: 'Corrente (A)',
-                    data: [],
-                    borderColor: '#9b59b6',
-                    backgroundColor: 'rgba(155, 89, 182, 0.2)',
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.3
-                }]
-            },
-            options: {
-                animation: false,
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: { title: { display: true, text: 'Tempo' } },
-                    y: { title: { display: true, text: 'Amperes'}, suggestedMin: 0, suggestedMax: 2  }
-                }
-            }
+            data: { labels: [], datasets: [{ label: 'Corrente (A)', data: [], borderColor: '#9b59b6', backgroundColor: 'rgba(155, 89, 182, 0.2)', borderWidth: 2, fill: false, tension: 0.3 }] },
+            options: { animation: false, responsive: true, maintainAspectRatio: false, scales: { x: { title: { display: true, text: 'Tempo' } }, y: { title: { display: true, text: 'Amperes'}, suggestedMin: 0, suggestedMax: 2 } } }
         });
 
-        // Função para atualizar gráficos com dois valores (Temp e Setpoint)
         function addDataDouble(chart, label, val1, val2) {
-            chart.data.labels.push(label);
-            chart.data.datasets[0].data.push(val1);
-            chart.data.datasets[1].data.push(val2);
-
-            if (chart.data.labels.length > 50) {
-                chart.data.labels.shift();
-                chart.data.datasets[0].data.shift();
-                chart.data.datasets[1].data.shift();
-            }
+            chart.data.labels.push(label); chart.data.datasets[0].data.push(val1); chart.data.datasets[1].data.push(val2);
+            if (chart.data.labels.length > 50) { chart.data.labels.shift(); chart.data.datasets[0].data.shift(); chart.data.datasets[1].data.shift(); }
             chart.update();
         }
 
-        // Função genérica para gráficos de uma linha só (Tensão e Corrente)
         function addDataSingle(chart, label, valor) {
-            chart.data.labels.push(label);
-            chart.data.datasets[0].data.push(valor);
-
-            if (chart.data.labels.length > 50) {
-                chart.data.labels.shift();
-                chart.data.datasets[0].data.shift();
-            }
+            chart.data.labels.push(label); chart.data.datasets[0].data.push(valor);
+            if (chart.data.labels.length > 50) { chart.data.labels.shift(); chart.data.datasets[0].data.shift(); }
             chart.update();
         }
 
@@ -455,10 +456,7 @@
 
         const options = {
             clientId: 'html_client_' + Math.random().toString(16).substr(2, 8),
-            clean: true,
-            connectTimeout: 4000,
-            username: 'esp32',
-            password: 'Carro2002',
+            clean: true, connectTimeout: 4000, username: 'esp32', password: 'Carro2002',
         };
 
         const btn = document.getElementById('btnEnviar');
@@ -475,20 +473,16 @@
             statusDiv.style.color = 'green';
             btn.innerText = 'Enviar Parâmetros';
             btn.disabled = false;
+            registrarLog('Conectado ao broker HiveMQ com sucesso.', 'SUCESSO');
 
-            // Inscrição individual explícita para evitar incompatibilidade de versões da CDN
-            client.subscribe(TOPICO_PID_STATUS, (err) => {
-                if (!err) console.log(`Inscrito no tópico: ${TOPICO_PID_STATUS}`);
-            });
-            client.subscribe(TOPICO_PZEM_DATA, (err) => {
-                if (!err) console.log(`Inscrito no tópico: ${TOPICO_PZEM_DATA}`);
-            });
+            client.subscribe(TOPICO_PID_STATUS);
+            client.subscribe(TOPICO_PZEM_DATA);
         });
 
         // Manipula mensagens recebidas
         client.on('message', (topic, message) => {
             const agora = new Date();
-            const horaFormatada = `${agora.getHours().padStart ? String(agora.getHours()).padStart(2, '0') : agora.getHours()}:${String(agora.getMinutes()).padStart(2, '0')}:${String(agora.getSeconds()).padStart(2, '0')}`;
+            const horaFormatada = `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}:${String(agora.getSeconds()).padStart(2, '0')}`;
 
             // ---- LÓGICA DO PID (Temperatura) ----
             if (topic === TOPICO_PID_STATUS) {
@@ -508,6 +502,31 @@
 
                         document.getElementById('led-lamp').className = (dados.lamp > 0 || dados.lampada > 0) ? 'led lamp-on' : 'led';
                         document.getElementById('led-fan').className = (dados.fan > 0 || dados.ventoinha > 0) ? 'led fan-on' : 'led';
+
+                        // SISTEMA DE ALARMES: Verifica se ultrapassou 2 graus do setpoint
+                        if (tempRecebida > (setpointAtual + 2.0)) {
+                            if (!alarmeTempAtivo) {
+                                registrarLog(`Temperatura excedeu o setpoint em mais de 2°C! (${tempRecebida}°C)`, 'ALERTA');
+                                alarmeTempAtivo = true;
+                            }
+                        } else if (tempRecebida <= (setpointAtual + 0.5)) {
+                            if (alarmeTempAtivo) {
+                                registrarLog(`Temperatura normalizada para ${tempRecebida}°C.`, 'SUCESSO');
+                                alarmeTempAtivo = false;
+                            }
+                        }
+
+                        // DATALOGGER: Salva a linha no array
+                        historicoDados.push({
+                            tempo: horaFormatada,
+                            setpoint: setpointAtual,
+                            temperatura: tempRecebida,
+                            lampada: dados.lamp ?? dados.lampada ?? 0,
+                            ventoinha: dados.fan ?? dados.ventoinha ?? 0,
+                            tensao: ultimaLeituraEnergia.tensao,
+                            corrente: ultimaLeituraEnergia.corrente,
+                            potencia: ultimaLeituraEnergia.potencia
+                        });
                     }
                 } catch (e) {
                     console.error("Erro no JSON do PID:", e);
@@ -519,7 +538,6 @@
                 try {
                     const pzemDados = JSON.parse(message.toString());
                     
-                    // ⚡ MAPEAMENTO TOLERANTE: Aceita chaves em Inglês, Português ou Abreviações vindas do Node-RED
                     const tensao   = parseFloat(pzemDados.voltage ?? pzemDados.tensao ?? pzemDados.v ?? pzemDados.V);
                     const corrente = parseFloat(pzemDados.current ?? pzemDados.corrente ?? pzemDados.i ?? pzemDados.I ?? pzemDados.intensity);
                     const potencia = parseFloat(pzemDados.power ?? pzemDados.potencia ?? pzemDados.p ?? pzemDados.P ?? pzemDados.active_power);
@@ -527,24 +545,27 @@
                     const freq     = parseFloat(pzemDados.frequency ?? pzemDados.frequencia ?? pzemDados.freq ?? pzemDados.f ?? pzemDados.F);
                     const fp       = parseFloat(pzemDados.pf ?? pzemDados.fator_potencia ?? pzemDados.fp ?? pzemDados.FP ?? pzemDados.power_factor);
 
-                    // Atualiza os Valores em Texto (Apenas se forem válidos)
                     if(!isNaN(potencia)) document.getElementById('val-power').innerText = potencia.toFixed(1) + ' W';
                     if(!isNaN(energia))  document.getElementById('val-energy').innerText = energia.toFixed(3) + ' kWh';
                     if(!isNaN(freq))     document.getElementById('val-freq').innerText = freq.toFixed(1) + ' Hz';
                     if(!isNaN(fp))       document.getElementById('val-pf').innerText = fp.toFixed(2);
 
-                    // Atualiza Gráficos e os valores abaixo deles
                     if(!isNaN(tensao)) {
                         addDataSingle(voltChart, horaFormatada, tensao);
                         document.getElementById('val-volt').innerText = tensao.toFixed(1) + ' V';
+                        ultimaLeituraEnergia.tensao = tensao; // Guarda para o datalogger
                     }
                     if(!isNaN(corrente)) {
                         addDataSingle(currChart, horaFormatada, corrente);
                         document.getElementById('val-curr').innerText = corrente.toFixed(2) + ' A';
+                        ultimaLeituraEnergia.corrente = corrente; // Guarda para o datalogger
+                    }
+                    if(!isNaN(potencia)) {
+                        ultimaLeituraEnergia.potencia = potencia; // Guarda para o datalogger
                     }
 
                 } catch (e) {
-                    console.error("Erro no JSON do PZEM vindo do Node-RED:", e);
+                    console.error("Erro no JSON do PZEM:", e);
                 }
             }
         });
@@ -559,8 +580,9 @@
             
             client.publish(TOPICO_PUBLISH, JSON.stringify(dadosPID), { qos: 1 }, (err) => {
                 if (err) {
-                    alert('Erro ao enviar parâmetros.');
+                    registrarLog('Erro ao enviar parâmetros via MQTT.', 'ALERTA');
                 } else {
+                    registrarLog(`Parâmetros PID enviados: SP=${dadosPID.setpoint}, Kp=${dadosPID.kp}, Ki=${dadosPID.ki}, Kd=${dadosPID.kd}`, 'INFO');
                     const textoOriginal = btn.innerText;
                     btn.innerText = 'Enviado!';
                     btn.style.backgroundColor = '#2ecc71';
@@ -577,6 +599,7 @@
             statusDiv.style.color = 'red';
             btn.disabled = true;
             btn.innerText = 'Conectando ao HiveMQ...';
+            registrarLog('Falha de conexão com o broker MQTT.', 'ALERTA');
         });
     </script>
 </body>
