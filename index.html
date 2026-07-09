@@ -3,99 +3,441 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle HiveMQ - ESP32</title>
-    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <title>Dashboard PID - ESP32</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script> <!--[cite: 4] -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!--[cite: 4] -->
+    
     <style>
+        * {
+            box-sizing: border-box; /*[cite: 4] */
+            margin: 0; /*[cite: 4] */
+            padding: 0; /*[cite: 4] */
+        }
         body {
-            font-family: Arial, sans-serif;
+            font-family: Arial, sans-serif; /*[cite: 4] */
+            display: flex; /*[cite: 4] */
+            height: 100vh; /*[cite: 4] */
+            background-color: #f4f4f9; /*[cite: 4] */
+        }
+        .sidebar {
+            width: 250px; /*[cite: 4] */
+            background-color: #2c3e50; /*[cite: 4] */
+            color: white; /*[cite: 4] */
+            display: flex; /*[cite: 4] */
+            flex-direction: column; /*[cite: 4] */
+            padding-top: 20px; /*[cite: 4] */
+        }
+        .sidebar h2 {
+            text-align: center; /*[cite: 4] */
+            margin-bottom: 20px; /*[cite: 4] */
+        }
+        .sidebar button {
+            background: none; /*[cite: 4] */
+            border: none; /*[cite: 4] */
+            color: white; /*[cite: 4] */
+            padding: 15px 20px; /*[cite: 4] */
+            text-align: left; /*[cite: 4] */
+            font-size: 16px; /*[cite: 4] */
+            cursor: pointer; /*[cite: 4] */
+            transition: background 0.3s; /*[cite: 4] */
+            width: 100%; /*[cite: 4] */
+        }
+        .sidebar button:hover {
+            background-color: #34495e; /*[cite: 4] */
+        }
+        .main-content {
+            flex: 1; /*[cite: 4] */
+            padding: 20px; /*[cite: 4] */
+            overflow-y: auto; /*[cite: 4] */
+        }
+        .screen { display: none; } /*[cite: 4] */
+        .screen.active { display: block; } /*[cite: 4] */
+        
+        .card {
+            background: white; /*[cite: 4] */
+            padding: 20px; /*[cite: 4] */
+            border-radius: 8px; /*[cite: 4] */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); /*[cite: 4] */
+            margin-bottom: 20px; /*[cite: 4] */
+        }
+        
+        /* Layout Superior (Termômetro + Parâmetros) */
+        .top-panel {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .params-container {
+            flex: 2;
+        }
+
+        /* Estilo do Painel de Status (Termômetro e Leds) */
+        .status-panel {
+            flex: 1;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        /* Indicadores (Leds) */
+        .indicators-box {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .led {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background-color: #bdc3c7;
+            transition: all 0.3s ease;
+        }
+        .led.lamp-on {
+            background-color: #f1c40f; /* Amarelo Lâmpada */
+            box-shadow: 0 0 15px #f1c40f;
+        }
+        .led.fan-on {
+            background-color: #3498db; /* Azul Ventoinha */
+            box-shadow: 0 0 15px #3498db;
+        }
+
+        /* Termômetro Visual */
+        .thermometer-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: #f4f4f9;
+            gap: 10px;
         }
-        button {
-            padding: 15px 30px;
-            font-size: 18px;
+        .thermometer-glass {
+            width: 30px;
+            height: 150px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            position: relative;
+            border: 2px solid #bdc3c7;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+        }
+        .thermometer-fluid {
+            width: 100%;
+            height: 0%; /* Alterado via JS */
+            background: linear-gradient(to top, #e74c3c, #c0392b);
+            transition: height 0.5s ease-in-out;
+        }
+        .thermometer-text {
+            font-size: 24px;
             font-weight: bold;
-            color: white;
-            background-color: #007bff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: background 0.2s;
+            color: #2c3e50;
         }
-        button:hover {
-            background-color: #0056b3;
+
+        .form-grid {
+            display: grid; /*[cite: 4] */
+            grid-template-columns: repeat(2, 1fr); /*[cite: 4] */
+            gap: 15px; /*[cite: 4] */
+            margin-bottom: 20px; /*[cite: 4] */
         }
-        button:active {
-            transform: scale(0.98);
+        .input-group {
+            display: flex; /*[cite: 4] */
+            flex-direction: column; /*[cite: 4] */
+        }
+        .input-group label {
+            margin-bottom: 5px; /*[cite: 4] */
+            font-weight: bold; /*[cite: 4] */
+        }
+        .input-group input {
+            padding: 10px; /*[cite: 4] */
+            border: 1px solid #ccc; /*[cite: 4] */
+            border-radius: 4px; /*[cite: 4] */
+            font-size: 16px; /*[cite: 4] */
+        }
+        .btn-primary {
+            padding: 10px 20px; /*[cite: 4] */
+            font-size: 16px; /*[cite: 4] */
+            font-weight: bold; /*[cite: 4] */
+            color: white; /*[cite: 4] */
+            background-color: #007bff; /*[cite: 4] */
+            border: none; /*[cite: 4] */
+            border-radius: 5px; /*[cite: 4] */
+            cursor: pointer; /*[cite: 4] */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); /*[cite: 4] */
+            transition: background 0.2s; /*[cite: 4] */
+        }
+        .btn-primary:hover {
+            background-color: #0056b3; /*[cite: 4] */
+        }
+        .btn-primary:disabled {
+            background-color: #a0c4ff; /*[cite: 4] */
+            cursor: not-allowed; /*[cite: 4] */
         }
         #status {
-            margin-top: 20px;
-            font-weight: bold;
-            color: #555;
+            font-weight: bold; /*[cite: 4] */
+            color: #555; /*[cite: 4] */
+            margin-bottom: 20px; /*[cite: 4] */
+        }
+        .chart-container {
+            position: relative; /*[cite: 4] */
+            height: 400px; /*[cite: 4] */
+            width: 100%; /*[cite: 4] */
         }
     </style>
 </head>
 <body>
 
-    <button id="btnEnviar" disabled>Conectando ao HiveMQ...</button>
-    <div id="status">Status: Desconectado</div>
+    <div class="sidebar">
+        <h2>Dashboard ESP32</h2>
+        <button onclick="switchScreen('controle')">Controle PID</button> <!--[cite: 4] -->
+        <button onclick="switchScreen('config')">Configurações</button> <!--[cite: 4] -->
+    </div>
+
+    <div class="main-content">
+        <div id="status">Status: Desconectado</div> <!--[cite: 4] -->
+
+        <div id="controle" class="screen active">
+            
+            <div class="top-panel">
+                <!-- Seção dos Parâmetros -->
+                <div class="card params-container">
+                    <h3>Parâmetros de Controle</h3>
+                    <br>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="setpoint">Setpoint (°C)</label>
+                            <input type="number" id="setpoint" value="25" step="0.1"> <!--[cite: 4] -->
+                        </div>
+                        <div class="input-group">
+                            <label for="kp">Kp</label>
+                            <input type="number" id="kp" value="1.0" step="0.1"> <!--[cite: 4] -->
+                        </div>
+                        <div class="input-group">
+                            <label for="ki">Ki</label>
+                            <input type="number" id="ki" value="1.0" step="0.1"> <!--[cite: 4] -->
+                        </div>
+                        <div class="input-group">
+                            <label for="kd">Kd</label>
+                            <input type="number" id="kd" value="0.0" step="0.1"> <!--[cite: 4] -->
+                        </div>
+                    </div>
+                    <button id="btnEnviar" class="btn-primary" disabled>Conectando ao HiveMQ...</button> <!--[cite: 4] -->
+                </div>
+
+                <!-- Seção dos Indicadores Visuais -->
+                <div class="card status-panel">
+                    <!-- Termômetro Visual -->
+                    <div class="thermometer-container">
+                        <div class="thermometer-glass">
+                            <div class="thermometer-fluid" id="thermo-fluid"></div>
+                        </div>
+                        <div class="thermometer-text" id="thermo-text">-- °C</div>
+                    </div>
+
+                    <!-- Leds -->
+                    <div class="indicators-box">
+                        <div class="indicator">
+                            <div id="led-lamp" class="led"></div>
+                            <span>Lâmpada</span>
+                        </div>
+                        <div class="indicator">
+                            <div id="led-fan" class="led"></div>
+                            <span>Ventoinha</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico -->
+            <div class="card">
+                <h3>Temperatura em Tempo Real</h3> <!--[cite: 4] -->
+                <div class="chart-container">
+                    <canvas id="tempChart"></canvas> <!--[cite: 4] -->
+                </div>
+            </div>
+
+        </div>
+
+        <div id="config" class="screen">
+            <div class="card">
+                <h3>Outras Configurações</h3> <!--[cite: 4] -->
+                <p>Aqui você pode adicionar outros botões ou status do seu projeto futuramente.</p> <!--[cite: 4] -->
+            </div>
+        </div>
+
+    </div>
 
     <script>
-        // Configurações do seu HiveMQ Cloud usando WebSockets (Porta 8884)
-        const host = '0e30f6e5a0a84184a8cc1139f3c59545.s1.eu.hivemq.cloud';
-        const port = '8884'; 
-        const connectUrl = `wss://${host}:${port}/mqtt`;
+        function switchScreen(screenId) { //[cite: 4]
+            document.querySelectorAll('.screen').forEach(screen => { //[cite: 4]
+                screen.classList.remove('active'); //[cite: 4]
+            });
+            document.getElementById(screenId).classList.add('active'); //[cite: 4]
+        }
 
-        const options = {
-            clientId: 'html_client_' + Math.random().toString(16).substr(2, 8),
-            clean: true,
-            connectTimeout: 4000,
-            username: 'esp32',
-            password: 'Carro2002',
-        };
-
-        const btn = document.getElementById('btnEnviar');
-        const statusDiv = document.getElementById('status');
-
-        console.log('Tentando conectar...');
-        const client = mqtt.connect(connectUrl, options);
-
-        // Quando conectar com sucesso
-        client.on('connect', () => {
-            console.log('✅ Conectado ao HiveMQ via WebSocket!');
-            statusDiv.innerText = 'Status: Conectado!';
-            statusDiv.style.color = 'green';
-            btn.innerText = 'Enviar Mensagem';
-            btn.disabled = false; // Ativa o botão
+        const ctx = document.getElementById('tempChart').getContext('2d'); //[cite: 4]
+        const tempChart = new Chart(ctx, { //[cite: 4]
+            type: 'line', //[cite: 4]
+            data: { //[cite: 4]
+                labels: [], //[cite: 4]
+                datasets: [{ //[cite: 4]
+                    label: 'Temperatura (°C)', //[cite: 4]
+                    data: [], //[cite: 4]
+                    borderColor: '#e74c3c', //[cite: 4]
+                    backgroundColor: 'rgba(231, 76, 60, 0.2)', //[cite: 4]
+                    borderWidth: 2, //[cite: 4]
+                    fill: false, //[cite: 4]
+                    tension: 0.3 //[cite: 4]
+                },
+                { //[cite: 4]
+                    label: 'Setpoint', //[cite: 4]
+                    data: [], //[cite: 4]
+                    borderColor: '#3498db', //[cite: 4]
+                    borderWidth: 2, //[cite: 4]
+                    borderDash: [5, 5], //[cite: 4]
+                    fill: false, //[cite: 4]
+                    pointRadius: 0 //[cite: 4]
+                }]
+            },
+            options: { //[cite: 4]
+                animation: false,
+		responsive: true, //[cite: 4]
+                maintainAspectRatio: false, //[cite: 4]
+                scales: { //[cite: 4]
+                    x: { title: { display: true, text: 'Tempo' } }, //[cite: 4]
+                    y: { title: { display: true, text: 'Temperatura (°C)' }, suggestedMin: 20, suggestedMax: 40 } //[cite: 4]
+                }
+            }
         });
 
-        // Evento do clique no botão
-        btn.addEventListener('click', () => {
-            const topico = 'esp32/comandos';
-            const mensagem = 'você apertou o botão';
+        function addData(chart, label, temp, setpoint) { //[cite: 4]
+            chart.data.labels.push(label); //[cite: 4]
+            chart.data.datasets[0].data.push(temp); //[cite: 4]
+            chart.data.datasets[1].data.push(setpoint); //[cite: 4]
 
-            client.publish(topico, mensagem, { qos: 1 }, (err) => {
-                if (err) {
-                    console.error('Erro ao enviar:', err);
-                    alert('Erro ao enviar mensagem.');
-                } else {
-                    console.log(`Mensagem enviada para [${topico}]: ${mensagem}`);
-                    statusDiv.innerText = 'Status: Mensagem enviada!';
-                    setTimeout(() => { statusDiv.innerText = 'Status: Conectado!'; }, 2000);
+            if (chart.data.labels.length > 50) { //[cite: 4]
+                chart.data.labels.shift(); //[cite: 4]
+                chart.data.datasets[0].data.shift(); //[cite: 4]
+                chart.data.datasets[1].data.shift(); //[cite: 4]
+            }
+            chart.update(); //[cite: 4]
+        }
+
+        const host = '0e30f6e5a0a84184a8cc1139f3c59545.s1.eu.hivemq.cloud'; //[cite: 4]
+        const port = '8884'; //[cite: 4]
+        const connectUrl = `wss://${host}:${port}/mqtt`; //[cite: 4]
+
+        const options = { //[cite: 4]
+            clientId: 'html_client_' + Math.random().toString(16).substr(2, 8), //[cite: 4]
+            clean: true, //[cite: 4]
+            connectTimeout: 4000, //[cite: 4]
+            username: 'esp32', //[cite: 4]
+            password: 'Carro2002', //[cite: 4]
+        };
+
+        const btn = document.getElementById('btnEnviar'); //[cite: 4]
+        const statusDiv = document.getElementById('status'); //[cite: 4]
+        
+        const TOPICO_PUBLISH = 'esp32/pid_config'; //[cite: 4]
+        const TOPICO_SUBSCRIBE = 'esp32/status'; // Ajustado para receber o JSON completo
+
+        const client = mqtt.connect(connectUrl, options); //[cite: 4]
+
+        client.on('connect', () => { //[cite: 4]
+            statusDiv.innerText = 'Status: Conectado!'; //[cite: 4]
+            statusDiv.style.color = 'green'; //[cite: 4]
+            btn.innerText = 'Enviar Parâmetros'; //[cite: 4]
+            btn.disabled = false; //[cite: 4]
+
+            client.subscribe(TOPICO_SUBSCRIBE, (err) => { //[cite: 4]
+                if (!err) { //[cite: 4]
+                    console.log(`Inscrito no tópico de status: ${TOPICO_SUBSCRIBE}`);
                 }
             });
         });
 
-        // Tratamento de erro
-        client.on('error', (err) => {
-            console.error('❌ Erro:', err);
-            statusDiv.innerText = 'Status: Erro na conexão';
-            statusDiv.style.color = 'red';
+        // Manipula a mensagem JSON recebida
+        client.on('message', (topic, message) => { //[cite: 4]
+            if (topic === TOPICO_SUBSCRIBE) {
+                try {
+                    // Interpreta o JSON enviado pelo ESP32
+                    const dados = JSON.parse(message.toString());
+                    const tempRecebida = parseFloat(dados.temp);
+                    const setpointAtual = parseFloat(document.getElementById('setpoint').value); //[cite: 4]
+                    
+                    if (!isNaN(tempRecebida)) { //[cite: 4]
+                        const agora = new Date(); //[cite: 4]
+                        const horaFormatada = `${agora.getHours()}:${agora.getMinutes()}:${agora.getSeconds()}`; //[cite: 4]
+                        
+                        // Atualiza o Gráfico
+                        addData(tempChart, horaFormatada, tempRecebida, setpointAtual); //[cite: 4]
+
+                        // Atualiza o texto do Termômetro
+                        document.getElementById('thermo-text').innerText = tempRecebida + ' °C';
+
+                        // Atualiza a barra do Termômetro visualmente (Mapeando 0 a 50°C para 0 a 100% da barra)
+                        let alturaBarra = (tempRecebida / 50) * 100; 
+                        if(alturaBarra > 100) alturaBarra = 100;
+                        if(alturaBarra < 0) alturaBarra = 0;
+                        document.getElementById('thermo-fluid').style.height = alturaBarra + '%';
+
+                        // Atualiza Leds da Lâmpada (Liga se > 0)
+                        const ledLamp = document.getElementById('led-lamp');
+                        if(dados.lamp > 0) {
+                            ledLamp.className = 'led lamp-on';
+                        } else {
+                            ledLamp.className = 'led';
+                        }
+
+                        // Atualiza Leds da Ventoinha (Liga se > 0)
+                        const ledFan = document.getElementById('led-fan');
+                        if(dados.fan > 0) {
+                            ledFan.className = 'led fan-on';
+                        } else {
+                            ledFan.className = 'led';
+                        }
+                    }
+                } catch (e) {
+                    console.error("Erro ao analisar dados do ESP32:", e);
+                }
+            }
+        });
+
+        btn.addEventListener('click', () => { //[cite: 4]
+            const dadosPID = { //[cite: 4]
+                setpoint: parseFloat(document.getElementById('setpoint').value), //[cite: 4]
+                kp: parseFloat(document.getElementById('kp').value), //[cite: 4]
+                ki: parseFloat(document.getElementById('ki').value), //[cite: 4]
+                kd: parseFloat(document.getElementById('kd').value) //[cite: 4]
+            };
+            const mensagem = JSON.stringify(dadosPID); //[cite: 4]
+
+            client.publish(TOPICO_PUBLISH, mensagem, { qos: 1 }, (err) => { //[cite: 4]
+                if (err) { //[cite: 4]
+                    alert('Erro ao enviar parâmetros.'); //[cite: 4]
+                } else {
+                    const textoOriginal = btn.innerText; //[cite: 4]
+                    btn.innerText = 'Enviado!'; //[cite: 4]
+                    btn.style.backgroundColor = '#2ecc71'; //[cite: 4]
+                    
+                    setTimeout(() => {  //[cite: 4]
+                        btn.innerText = textoOriginal;  //[cite: 4]
+                        btn.style.backgroundColor = '#007bff'; //[cite: 4]
+                    }, 2000); //[cite: 4]
+                }
+            });
+        });
+
+        client.on('error', (err) => { //[cite: 4]
+            statusDiv.innerText = 'Status: Erro na conexão'; //[cite: 4]
+            statusDiv.style.color = 'red'; //[cite: 4]
+            btn.disabled = true; //[cite: 4]
+            btn.innerText = 'Conectando ao HiveMQ...'; //[cite: 4]
         });
     </script>
 </body>
