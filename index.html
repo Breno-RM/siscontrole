@@ -4,64 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard PID - ESP32</title>
-    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script> <!--[cite: 4] -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!--[cite: 4] -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         * {
-            box-sizing: border-box; /*[cite: 4] */
-            margin: 0; /*[cite: 4] */
-            padding: 0; /*[cite: 4] */
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
         body {
-            font-family: Arial, sans-serif; /*[cite: 4] */
-            display: flex; /*[cite: 4] */
-            height: 100vh; /*[cite: 4] */
-            background-color: #f4f4f9; /*[cite: 4] */
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+            background-color: #f4f4f9;
         }
         .sidebar {
-            width: 250px; /*[cite: 4] */
-            background-color: #2c3e50; /*[cite: 4] */
-            color: white; /*[cite: 4] */
-            display: flex; /*[cite: 4] */
-            flex-direction: column; /*[cite: 4] */
-            padding-top: 20px; /*[cite: 4] */
+            width: 250px;
+            background-color: #2c3e50;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding-top: 20px;
         }
         .sidebar h2 {
-            text-align: center; /*[cite: 4] */
-            margin-bottom: 20px; /*[cite: 4] */
+            text-align: center;
+            margin-bottom: 20px;
         }
         .sidebar button {
-            background: none; /*[cite: 4] */
-            border: none; /*[cite: 4] */
-            color: white; /*[cite: 4] */
-            padding: 15px 20px; /*[cite: 4] */
-            text-align: left; /*[cite: 4] */
-            font-size: 16px; /*[cite: 4] */
-            cursor: pointer; /*[cite: 4] */
-            transition: background 0.3s; /*[cite: 4] */
-            width: 100%; /*[cite: 4] */
+            background: none;
+            border: none;
+            color: white;
+            padding: 15px 20px;
+            text-align: left;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+            width: 100%;
         }
         .sidebar button:hover {
-            background-color: #34495e; /*[cite: 4] */
+            background-color: #34495e;
         }
         .main-content {
-            flex: 1; /*[cite: 4] */
-            padding: 20px; /*[cite: 4] */
-            overflow-y: auto; /*[cite: 4] */
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
         }
-        .screen { display: none; } /*[cite: 4] */
-        .screen.active { display: block; } /*[cite: 4] */
+        .screen { display: none; }
+        .screen.active { display: block; }
         
         .card {
-            background: white; /*[cite: 4] */
-            padding: 20px; /*[cite: 4] */
-            border-radius: 8px; /*[cite: 4] */
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); /*[cite: 4] */
-            margin-bottom: 20px; /*[cite: 4] */
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
         
-        /* Layout Superior (Termômetro + Parâmetros) */
         .top-panel {
             display: flex;
             gap: 20px;
@@ -72,7 +71,6 @@
             flex: 2;
         }
 
-        /* Estilo do Painel de Status (Termômetro e Leds) */
         .status-panel {
             flex: 1;
             display: flex;
@@ -80,7 +78,6 @@
             align-items: center;
         }
 
-        /* Indicadores (Leds) */
         .indicators-box {
             display: flex;
             flex-direction: column;
@@ -101,15 +98,14 @@
             transition: all 0.3s ease;
         }
         .led.lamp-on {
-            background-color: #f1c40f; /* Amarelo Lâmpada */
+            background-color: #f1c40f;
             box-shadow: 0 0 15px #f1c40f;
         }
         .led.fan-on {
-            background-color: #3498db; /* Azul Ventoinha */
+            background-color: #3498db;
             box-shadow: 0 0 15px #3498db;
         }
 
-        /* Termômetro Visual */
         .thermometer-container {
             display: flex;
             flex-direction: column;
@@ -129,7 +125,7 @@
         }
         .thermometer-fluid {
             width: 100%;
-            height: 0%; /* Alterado via JS */
+            height: 0%;
             background: linear-gradient(to top, #e74c3c, #c0392b);
             transition: height 0.5s ease-in-out;
         }
@@ -140,53 +136,64 @@
         }
 
         .form-grid {
-            display: grid; /*[cite: 4] */
-            grid-template-columns: repeat(2, 1fr); /*[cite: 4] */
-            gap: 15px; /*[cite: 4] */
-            margin-bottom: 20px; /*[cite: 4] */
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
         }
         .input-group {
-            display: flex; /*[cite: 4] */
-            flex-direction: column; /*[cite: 4] */
+            display: flex;
+            flex-direction: column;
         }
         .input-group label {
-            margin-bottom: 5px; /*[cite: 4] */
-            font-weight: bold; /*[cite: 4] */
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
         }
         .input-group input {
-            padding: 10px; /*[cite: 4] */
-            border: 1px solid #ccc; /*[cite: 4] */
-            border-radius: 4px; /*[cite: 4] */
-            font-size: 16px; /*[cite: 4] */
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
         }
+        .value-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            background: #ecf0f1;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
         .btn-primary {
-            padding: 10px 20px; /*[cite: 4] */
-            font-size: 16px; /*[cite: 4] */
-            font-weight: bold; /*[cite: 4] */
-            color: white; /*[cite: 4] */
-            background-color: #007bff; /*[cite: 4] */
-            border: none; /*[cite: 4] */
-            border-radius: 5px; /*[cite: 4] */
-            cursor: pointer; /*[cite: 4] */
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); /*[cite: 4] */
-            transition: background 0.2s; /*[cite: 4] */
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: background 0.2s;
         }
         .btn-primary:hover {
-            background-color: #0056b3; /*[cite: 4] */
+            background-color: #0056b3;
         }
         .btn-primary:disabled {
-            background-color: #a0c4ff; /*[cite: 4] */
-            cursor: not-allowed; /*[cite: 4] */
+            background-color: #a0c4ff;
+            cursor: not-allowed;
         }
         #status {
-            font-weight: bold; /*[cite: 4] */
-            color: #555; /*[cite: 4] */
-            margin-bottom: 20px; /*[cite: 4] */
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 20px;
         }
         .chart-container {
-            position: relative; /*[cite: 4] */
-            height: 400px; /*[cite: 4] */
-            width: 100%; /*[cite: 4] */
+            position: relative;
+            height: 400px;
+            width: 100%;
         }
     </style>
 </head>
@@ -194,44 +201,42 @@
 
     <div class="sidebar">
         <h2>Dashboard ESP32</h2>
-        <button onclick="switchScreen('controle')">Controle PID</button> <!--[cite: 4] -->
-        <button onclick="switchScreen('config')">Configurações</button> <!--[cite: 4] -->
+        <button onclick="switchScreen('controle')">Controle PID</button>
+        <button onclick="switchScreen('pzem-screen')">Monitor de Energia</button>
+        <button onclick="switchScreen('config')">Configurações</button>
     </div>
 
     <div class="main-content">
-        <div id="status">Status: Desconectado</div> <!--[cite: 4] -->
+        <div id="status">Status: Desconectado</div>
 
+        <!-- TELA 1: PID -->
         <div id="controle" class="screen active">
-            
             <div class="top-panel">
-                <!-- Seção dos Parâmetros -->
                 <div class="card params-container">
                     <h3>Parâmetros de Controle</h3>
                     <br>
                     <div class="form-grid">
                         <div class="input-group">
                             <label for="setpoint">Setpoint (°C)</label>
-                            <input type="number" id="setpoint" value="25" step="0.1"> <!--[cite: 4] -->
+                            <input type="number" id="setpoint" value="25" step="0.1">
                         </div>
                         <div class="input-group">
                             <label for="kp">Kp</label>
-                            <input type="number" id="kp" value="1.0" step="0.1"> <!--[cite: 4] -->
+                            <input type="number" id="kp" value="1.0" step="0.1">
                         </div>
                         <div class="input-group">
                             <label for="ki">Ki</label>
-                            <input type="number" id="ki" value="1.0" step="0.1"> <!--[cite: 4] -->
+                            <input type="number" id="ki" value="1.0" step="0.1">
                         </div>
                         <div class="input-group">
                             <label for="kd">Kd</label>
-                            <input type="number" id="kd" value="0.0" step="0.1"> <!--[cite: 4] -->
+                            <input type="number" id="kd" value="0.0" step="0.1">
                         </div>
                     </div>
-                    <button id="btnEnviar" class="btn-primary" disabled>Conectando ao HiveMQ...</button> <!--[cite: 4] -->
+                    <button id="btnEnviar" class="btn-primary" disabled>Conectando ao HiveMQ...</button>
                 </div>
 
-                <!-- Seção dos Indicadores Visuais -->
                 <div class="card status-panel">
-                    <!-- Termômetro Visual -->
                     <div class="thermometer-container">
                         <div class="thermometer-glass">
                             <div class="thermometer-fluid" id="thermo-fluid"></div>
@@ -239,7 +244,6 @@
                         <div class="thermometer-text" id="thermo-text">-- °C</div>
                     </div>
 
-                    <!-- Leds -->
                     <div class="indicators-box">
                         <div class="indicator">
                             <div id="led-lamp" class="led"></div>
@@ -253,191 +257,326 @@
                 </div>
             </div>
 
-            <!-- Gráfico -->
             <div class="card">
-                <h3>Temperatura em Tempo Real</h3> <!--[cite: 4] -->
+                <h3>Temperatura em Tempo Real</h3>
                 <div class="chart-container">
-                    <canvas id="tempChart"></canvas> <!--[cite: 4] -->
+                    <canvas id="tempChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- TELA 2: PZEM / ENERGIA -->
+        <div id="pzem-screen" class="screen">
+            <div class="card">
+                <h3>Medições Instantâneas (PZEM)</h3>
+                <br>
+                <div class="form-grid" style="grid-template-columns: repeat(4, 1fr);">
+                    <div class="input-group">
+                        <label>Potência Ativa</label>
+                        <div id="val-power" class="value-display">-- W</div>
+                    </div>
+                    <div class="input-group">
+                        <label>Consumo de Energia</label>
+                        <div id="val-energy" class="value-display">-- kWh</div>
+                    </div>
+                    <div class="input-group">
+                        <label>Frequência</label>
+                        <div id="val-freq" class="value-display">-- Hz</div>
+                    </div>
+                    <div class="input-group">
+                        <label>Fator de Potência</label>
+                        <div id="val-pf" class="value-display">--</div>
+                    </div>
                 </div>
             </div>
 
+            <div class="form-grid">
+                <!-- Gráfico de Tensão -->
+                <div class="card">
+                    <h3>Tensão (V)</h3>
+                    <div class="chart-container" style="height: 300px;">
+                        <canvas id="voltChart"></canvas>
+                    </div>
+                    <!-- Nova div para exibir o valor em texto -->
+                    <div id="val-volt" class="value-display" style="margin-top: 15px;">-- V</div>
+                </div>
+                <!-- Gráfico de Corrente -->
+                <div class="card">
+                    <h3>Corrente (A)</h3>
+                    <div class="chart-container" style="height: 300px;">
+                        <canvas id="currChart"></canvas>
+                    </div>
+                    <!-- Nova div para exibir o valor em texto -->
+                    <div id="val-curr" class="value-display" style="margin-top: 15px;">-- A</div>
+                </div>
+            </div>
         </div>
 
+        <!-- TELA 3: CONFIGURAÇÕES -->
         <div id="config" class="screen">
             <div class="card">
-                <h3>Outras Configurações</h3> <!--[cite: 4] -->
-                <p>Aqui você pode adicionar outros botões ou status do seu projeto futuramente.</p> <!--[cite: 4] -->
+                <h3>Outras Configurações</h3>
+                <p>Aqui você pode adicionar outros botões ou status do seu projeto futuramente.</p>
             </div>
         </div>
 
     </div>
 
     <script>
-        function switchScreen(screenId) { //[cite: 4]
-            document.querySelectorAll('.screen').forEach(screen => { //[cite: 4]
-                screen.classList.remove('active'); //[cite: 4]
+        // --- Navegação entre Telas ---
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
             });
-            document.getElementById(screenId).classList.add('active'); //[cite: 4]
+            document.getElementById(screenId).classList.add('active');
         }
 
-        const ctx = document.getElementById('tempChart').getContext('2d'); //[cite: 4]
-        const tempChart = new Chart(ctx, { //[cite: 4]
-            type: 'line', //[cite: 4]
-            data: { //[cite: 4]
-                labels: [], //[cite: 4]
-                datasets: [{ //[cite: 4]
-                    label: 'Temperatura (°C)', //[cite: 4]
-                    data: [], //[cite: 4]
-                    borderColor: '#e74c3c', //[cite: 4]
-                    backgroundColor: 'rgba(231, 76, 60, 0.2)', //[cite: 4]
-                    borderWidth: 2, //[cite: 4]
-                    fill: false, //[cite: 4]
-                    tension: 0.3 //[cite: 4]
+        // --- Configuração dos Gráficos ---
+        // 1. Gráfico de Temperatura
+        const ctxTemp = document.getElementById('tempChart').getContext('2d');
+        const tempChart = new Chart(ctxTemp, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Temperatura (°C)',
+                    data: [],
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.3
                 },
-                { //[cite: 4]
-                    label: 'Setpoint', //[cite: 4]
-                    data: [], //[cite: 4]
-                    borderColor: '#3498db', //[cite: 4]
-                    borderWidth: 2, //[cite: 4]
-                    borderDash: [5, 5], //[cite: 4]
-                    fill: false, //[cite: 4]
-                    pointRadius: 0 //[cite: 4]
+                {
+                    label: 'Setpoint',
+                    data: [],
+                    borderColor: '#3498db',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
                 }]
             },
-            options: { //[cite: 4]
+            options: {
                 animation: false,
-		responsive: true, //[cite: 4]
-                maintainAspectRatio: false, //[cite: 4]
-                scales: { //[cite: 4]
-                    x: { title: { display: true, text: 'Tempo' } }, //[cite: 4]
-                    y: { title: { display: true, text: 'Temperatura (°C)' }, suggestedMin: 20, suggestedMax: 40 } //[cite: 4]
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { title: { display: true, text: 'Tempo' } },
+                    y: { title: { display: true, text: 'Temperatura (°C)'}, suggestedMin: 20, suggestedMax: 45 }
                 }
             }
         });
 
-        function addData(chart, label, temp, setpoint) { //[cite: 4]
-            chart.data.labels.push(label); //[cite: 4]
-            chart.data.datasets[0].data.push(temp); //[cite: 4]
-            chart.data.datasets[1].data.push(setpoint); //[cite: 4]
-
-            if (chart.data.labels.length > 50) { //[cite: 4]
-                chart.data.labels.shift(); //[cite: 4]
-                chart.data.datasets[0].data.shift(); //[cite: 4]
-                chart.data.datasets[1].data.shift(); //[cite: 4]
+        // 2. Gráfico de Tensão (PZEM) - Removido min/max fixos para aceitar 127V ou 220V automaticamente
+        const ctxVolt = document.getElementById('voltChart').getContext('2d');
+        const voltChart = new Chart(ctxVolt, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Tensão (V)',
+                    data: [],
+                    borderColor: '#f1c40f',
+                    backgroundColor: 'rgba(241, 196, 15, 0.2)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                animation: false,
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { title: { display: true, text: 'Tempo' } },
+                    y: { title: { display: true, text: 'Volts' }, suggestedMin: 200, suggestedMax: 240  }
+                }
             }
-            chart.update(); //[cite: 4]
+        });
+
+        // 3. Gráfico de Corrente (PZEM)
+        const ctxCurr = document.getElementById('currChart').getContext('2d');
+        const currChart = new Chart(ctxCurr, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Corrente (A)',
+                    data: [],
+                    borderColor: '#9b59b6',
+                    backgroundColor: 'rgba(155, 89, 182, 0.2)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                animation: false,
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { title: { display: true, text: 'Tempo' } },
+                    y: { title: { display: true, text: 'Amperes'}, suggestedMin: 0, suggestedMax: 2  }
+                }
+            }
+        });
+
+        // Função para atualizar gráficos com dois valores (Temp e Setpoint)
+        function addDataDouble(chart, label, val1, val2) {
+            chart.data.labels.push(label);
+            chart.data.datasets[0].data.push(val1);
+            chart.data.datasets[1].data.push(val2);
+
+            if (chart.data.labels.length > 50) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+                chart.data.datasets[1].data.shift();
+            }
+            chart.update();
         }
 
-        const host = '0e30f6e5a0a84184a8cc1139f3c59545.s1.eu.hivemq.cloud'; //[cite: 4]
-        const port = '8884'; //[cite: 4]
-        const connectUrl = `wss://${host}:${port}/mqtt`; //[cite: 4]
+        // Função genérica para gráficos de uma linha só (Tensão e Corrente)
+        function addDataSingle(chart, label, valor) {
+            chart.data.labels.push(label);
+            chart.data.datasets[0].data.push(valor);
 
-        const options = { //[cite: 4]
-            clientId: 'html_client_' + Math.random().toString(16).substr(2, 8), //[cite: 4]
-            clean: true, //[cite: 4]
-            connectTimeout: 4000, //[cite: 4]
-            username: 'esp32', //[cite: 4]
-            password: 'Carro2002', //[cite: 4]
+            if (chart.data.labels.length > 50) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+            }
+            chart.update();
+        }
+
+        // --- Configuração MQTT ---
+        const host = '0e30f6e5a0a84184a8cc1139f3c59545.s1.eu.hivemq.cloud';
+        const port = '8884';
+        const connectUrl = `wss://${host}:${port}/mqtt`;
+
+        const options = {
+            clientId: 'html_client_' + Math.random().toString(16).substr(2, 8),
+            clean: true,
+            connectTimeout: 4000,
+            username: 'esp32',
+            password: 'Carro2002',
         };
 
-        const btn = document.getElementById('btnEnviar'); //[cite: 4]
-        const statusDiv = document.getElementById('status'); //[cite: 4]
+        const btn = document.getElementById('btnEnviar');
+        const statusDiv = document.getElementById('status');
         
-        const TOPICO_PUBLISH = 'esp32/pid_config'; //[cite: 4]
-        const TOPICO_SUBSCRIBE = 'esp32/status'; // Ajustado para receber o JSON completo
+        const TOPICO_PUBLISH = 'esp32/pid_config';
+        const TOPICO_PID_STATUS = 'esp32/status';
+        const TOPICO_PZEM_DATA = 'pzem/data'; 
 
-        const client = mqtt.connect(connectUrl, options); //[cite: 4]
+        const client = mqtt.connect(connectUrl, options);
 
-        client.on('connect', () => { //[cite: 4]
-            statusDiv.innerText = 'Status: Conectado!'; //[cite: 4]
-            statusDiv.style.color = 'green'; //[cite: 4]
-            btn.innerText = 'Enviar Parâmetros'; //[cite: 4]
-            btn.disabled = false; //[cite: 4]
+        client.on('connect', () => {
+            statusDiv.innerText = 'Status: Conectado!';
+            statusDiv.style.color = 'green';
+            btn.innerText = 'Enviar Parâmetros';
+            btn.disabled = false;
 
-            client.subscribe(TOPICO_SUBSCRIBE, (err) => { //[cite: 4]
-                if (!err) { //[cite: 4]
-                    console.log(`Inscrito no tópico de status: ${TOPICO_SUBSCRIBE}`);
-                }
+            // Inscrição individual explícita para evitar incompatibilidade de versões da CDN
+            client.subscribe(TOPICO_PID_STATUS, (err) => {
+                if (!err) console.log(`Inscrito no tópico: ${TOPICO_PID_STATUS}`);
+            });
+            client.subscribe(TOPICO_PZEM_DATA, (err) => {
+                if (!err) console.log(`Inscrito no tópico: ${TOPICO_PZEM_DATA}`);
             });
         });
 
-        // Manipula a mensagem JSON recebida
-        client.on('message', (topic, message) => { //[cite: 4]
-            if (topic === TOPICO_SUBSCRIBE) {
-                try {
-                    // Interpreta o JSON enviado pelo ESP32
-                    const dados = JSON.parse(message.toString());
-                    const tempRecebida = parseFloat(dados.temp);
-                    const setpointAtual = parseFloat(document.getElementById('setpoint').value); //[cite: 4]
-                    
-                    if (!isNaN(tempRecebida)) { //[cite: 4]
-                        const agora = new Date(); //[cite: 4]
-                        const horaFormatada = `${agora.getHours()}:${agora.getMinutes()}:${agora.getSeconds()}`; //[cite: 4]
-                        
-                        // Atualiza o Gráfico
-                        addData(tempChart, horaFormatada, tempRecebida, setpointAtual); //[cite: 4]
+        // Manipula mensagens recebidas
+        client.on('message', (topic, message) => {
+            const agora = new Date();
+            const horaFormatada = `${agora.getHours().padStart ? String(agora.getHours()).padStart(2, '0') : agora.getHours()}:${String(agora.getMinutes()).padStart(2, '0')}:${String(agora.getSeconds()).padStart(2, '0')}`;
 
-                        // Atualiza o texto do Termômetro
+            // ---- LÓGICA DO PID (Temperatura) ----
+            if (topic === TOPICO_PID_STATUS) {
+                try {
+                    const dados = JSON.parse(message.toString());
+                    const tempRecebida = parseFloat(dados.temp ?? dados.temperatura);
+                    const setpointAtual = parseFloat(document.getElementById('setpoint').value);
+                    
+                    if (!isNaN(tempRecebida)) {
+                        addDataDouble(tempChart, horaFormatada, tempRecebida, setpointAtual);
                         document.getElementById('thermo-text').innerText = tempRecebida + ' °C';
 
-                        // Atualiza a barra do Termômetro visualmente (Mapeando 0 a 50°C para 0 a 100% da barra)
                         let alturaBarra = (tempRecebida / 50) * 100; 
                         if(alturaBarra > 100) alturaBarra = 100;
                         if(alturaBarra < 0) alturaBarra = 0;
                         document.getElementById('thermo-fluid').style.height = alturaBarra + '%';
 
-                        // Atualiza Leds da Lâmpada (Liga se > 0)
-                        const ledLamp = document.getElementById('led-lamp');
-                        if(dados.lamp > 0) {
-                            ledLamp.className = 'led lamp-on';
-                        } else {
-                            ledLamp.className = 'led';
-                        }
-
-                        // Atualiza Leds da Ventoinha (Liga se > 0)
-                        const ledFan = document.getElementById('led-fan');
-                        if(dados.fan > 0) {
-                            ledFan.className = 'led fan-on';
-                        } else {
-                            ledFan.className = 'led';
-                        }
+                        document.getElementById('led-lamp').className = (dados.lamp > 0 || dados.lampada > 0) ? 'led lamp-on' : 'led';
+                        document.getElementById('led-fan').className = (dados.fan > 0 || dados.ventoinha > 0) ? 'led fan-on' : 'led';
                     }
                 } catch (e) {
-                    console.error("Erro ao analisar dados do ESP32:", e);
+                    console.error("Erro no JSON do PID:", e);
+                }
+            }
+            
+            // ---- LÓGICA DO PZEM (Energia) ----
+            else if (topic === TOPICO_PZEM_DATA) {
+                try {
+                    const pzemDados = JSON.parse(message.toString());
+                    
+                    // ⚡ MAPEAMENTO TOLERANTE: Aceita chaves em Inglês, Português ou Abreviações vindas do Node-RED
+                    const tensao   = parseFloat(pzemDados.voltage ?? pzemDados.tensao ?? pzemDados.v ?? pzemDados.V);
+                    const corrente = parseFloat(pzemDados.current ?? pzemDados.corrente ?? pzemDados.i ?? pzemDados.I ?? pzemDados.intensity);
+                    const potencia = parseFloat(pzemDados.power ?? pzemDados.potencia ?? pzemDados.p ?? pzemDados.P ?? pzemDados.active_power);
+                    const energia  = parseFloat(pzemDados.energy ?? pzemDados.energia ?? pzemDados.e ?? pzemDados.E);
+                    const freq     = parseFloat(pzemDados.frequency ?? pzemDados.frequencia ?? pzemDados.freq ?? pzemDados.f ?? pzemDados.F);
+                    const fp       = parseFloat(pzemDados.pf ?? pzemDados.fator_potencia ?? pzemDados.fp ?? pzemDados.FP ?? pzemDados.power_factor);
+
+                    // Atualiza os Valores em Texto (Apenas se forem válidos)
+                    if(!isNaN(potencia)) document.getElementById('val-power').innerText = potencia.toFixed(1) + ' W';
+                    if(!isNaN(energia))  document.getElementById('val-energy').innerText = energia.toFixed(3) + ' kWh';
+                    if(!isNaN(freq))     document.getElementById('val-freq').innerText = freq.toFixed(1) + ' Hz';
+                    if(!isNaN(fp))       document.getElementById('val-pf').innerText = fp.toFixed(2);
+
+                    // Atualiza Gráficos e os valores abaixo deles
+                    if(!isNaN(tensao)) {
+                        addDataSingle(voltChart, horaFormatada, tensao);
+                        document.getElementById('val-volt').innerText = tensao.toFixed(1) + ' V';
+                    }
+                    if(!isNaN(corrente)) {
+                        addDataSingle(currChart, horaFormatada, corrente);
+                        document.getElementById('val-curr').innerText = corrente.toFixed(2) + ' A';
+                    }
+
+                } catch (e) {
+                    console.error("Erro no JSON do PZEM vindo do Node-RED:", e);
                 }
             }
         });
 
-        btn.addEventListener('click', () => { //[cite: 4]
-            const dadosPID = { //[cite: 4]
-                setpoint: parseFloat(document.getElementById('setpoint').value), //[cite: 4]
-                kp: parseFloat(document.getElementById('kp').value), //[cite: 4]
-                ki: parseFloat(document.getElementById('ki').value), //[cite: 4]
-                kd: parseFloat(document.getElementById('kd').value) //[cite: 4]
+        btn.addEventListener('click', () => {
+            const dadosPID = {
+                setpoint: parseFloat(document.getElementById('setpoint').value),
+                kp: parseFloat(document.getElementById('kp').value),
+                ki: parseFloat(document.getElementById('ki').value),
+                kd: parseFloat(document.getElementById('kd').value)
             };
-            const mensagem = JSON.stringify(dadosPID); //[cite: 4]
-
-            client.publish(TOPICO_PUBLISH, mensagem, { qos: 1 }, (err) => { //[cite: 4]
-                if (err) { //[cite: 4]
-                    alert('Erro ao enviar parâmetros.'); //[cite: 4]
+            
+            client.publish(TOPICO_PUBLISH, JSON.stringify(dadosPID), { qos: 1 }, (err) => {
+                if (err) {
+                    alert('Erro ao enviar parâmetros.');
                 } else {
-                    const textoOriginal = btn.innerText; //[cite: 4]
-                    btn.innerText = 'Enviado!'; //[cite: 4]
-                    btn.style.backgroundColor = '#2ecc71'; //[cite: 4]
-                    
-                    setTimeout(() => {  //[cite: 4]
-                        btn.innerText = textoOriginal;  //[cite: 4]
-                        btn.style.backgroundColor = '#007bff'; //[cite: 4]
-                    }, 2000); //[cite: 4]
+                    const textoOriginal = btn.innerText;
+                    btn.innerText = 'Enviado!';
+                    btn.style.backgroundColor = '#2ecc71';
+                    setTimeout(() => {
+                        btn.innerText = textoOriginal;
+                        btn.style.backgroundColor = '#007bff';
+                    }, 2000);
                 }
             });
         });
 
-        client.on('error', (err) => { //[cite: 4]
-            statusDiv.innerText = 'Status: Erro na conexão'; //[cite: 4]
-            statusDiv.style.color = 'red'; //[cite: 4]
-            btn.disabled = true; //[cite: 4]
-            btn.innerText = 'Conectando ao HiveMQ...'; //[cite: 4]
+        client.on('error', (err) => {
+            statusDiv.innerText = 'Status: Erro na conexão';
+            statusDiv.style.color = 'red';
+            btn.disabled = true;
+            btn.innerText = 'Conectando ao HiveMQ...';
         });
     </script>
 </body>
