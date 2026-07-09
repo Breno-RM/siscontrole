@@ -72,8 +72,10 @@
             margin-bottom: 20px;
         }
 
-        .params-container {
+        .params-column {
             flex: 2;
+            display: flex;
+            flex-direction: column;
         }
 
         .status-panel {
@@ -81,6 +83,7 @@
             display: flex;
             justify-content: space-around;
             align-items: center;
+            margin-bottom: 0 !important;
         }
 
         .indicators-box {
@@ -154,6 +157,7 @@
             margin-bottom: 5px;
             font-weight: bold;
             color: #555;
+            font-size: 14px;
         }
         .input-group input {
             padding: 10px;
@@ -162,13 +166,16 @@
             font-size: 16px;
         }
         .value-display {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             color: #2c3e50;
             background: #ecf0f1;
             padding: 10px;
             border-radius: 5px;
             text-align: center;
+        }
+        .value-display.small-font {
+            font-size: 18px;
         }
         
         .btn-primary {
@@ -229,7 +236,6 @@
         
         <hr class="divider">
         
-        <!-- Novo botão de exportação -->
         <button onclick="exportarCSV()" style="color: #2ecc71; font-weight: bold;">📥 Exportar CSV</button>
     </div>
 
@@ -239,30 +245,60 @@
         <!-- TELA 1: PID -->
         <div id="controle" class="screen active">
             <div class="top-panel">
-                <div class="card params-container">
-                    <h3>Parâmetros de Controle</h3>
-                    <br>
-                    <div class="form-grid">
-                        <div class="input-group">
-                            <label for="setpoint">Setpoint (°C)</label>
-                            <input type="number" id="setpoint" value="25" step="0.1">
+                
+                <!-- Coluna da Esquerda: Inputs + Leituras -->
+                <div class="params-column">
+                    <!-- Painel de Envio (Apenas para digitar) -->
+                    <div class="card">
+                        <h3>Parâmetros de Controle</h3>
+                        <br>
+                        <div class="form-grid">
+                            <div class="input-group">
+                                <label for="setpoint">Setpoint (°C)</label>
+                                <input type="number" id="setpoint" value="0" step="0.1">
+                            </div>
+                            <div class="input-group">
+                                <label for="kp">Kp</label>
+                                <input type="number" id="kp" value="0" step="0.1">
+                            </div>
+                            <div class="input-group">
+                                <label for="ki">Ki</label>
+                                <input type="number" id="ki" value="0" step="0.1">
+                            </div>
+                            <div class="input-group">
+                                <label for="kd">Kd</label>
+                                <input type="number" id="kd" value="0" step="0.1">
+                            </div>
                         </div>
-                        <div class="input-group">
-                            <label for="kp">Kp</label>
-                            <input type="number" id="kp" value="1.0" step="0.1">
-                        </div>
-                        <div class="input-group">
-                            <label for="ki">Ki</label>
-                            <input type="number" id="ki" value="1.0" step="0.1">
-                        </div>
-                        <div class="input-group">
-                            <label for="kd">Kd</label>
-                            <input type="number" id="kd" value="0.0" step="0.1">
+                        <button id="btnEnviar" class="btn-primary" disabled>Conectando ao HiveMQ...</button>
+                    </div>
+
+                    <!-- Painel de Feedback (Apenas para exibir o que está no ESP32) -->
+                    <div class="card" style="margin-bottom: 0;">
+                        <h3 style="color: #2c3e50;">Valores Atuais no Controlador</h3>
+                        <br>
+                        <div class="form-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 0;">
+                            <div class="input-group">
+                                <label>Setpoint Atual</label>
+                                <div id="atual-setp" class="value-display small-font">--</div>
+                            </div>
+                            <div class="input-group">
+                                <label>Kp Atual</label>
+                                <div id="atual-kp" class="value-display small-font">--</div>
+                            </div>
+                            <div class="input-group">
+                                <label>Ki Atual</label>
+                                <div id="atual-ki" class="value-display small-font">--</div>
+                            </div>
+                            <div class="input-group">
+                                <label>Kd Atual</label>
+                                <div id="atual-kd" class="value-display small-font">--</div>
+                            </div>
                         </div>
                     </div>
-                    <button id="btnEnviar" class="btn-primary" disabled>Conectando ao HiveMQ...</button>
                 </div>
 
+                <!-- Coluna da Direita: Termômetro e LEDs -->
                 <div class="card status-panel">
                     <div class="thermometer-container">
                         <div class="thermometer-glass">
@@ -293,7 +329,7 @@
 
             <!-- Log de Alarmes e Eventos -->
             <div class="card">
-                <h3>Log de Eventos</h3>
+                <h3>Log de Eventos e Auditoria</h3>
                 <br>
                 <div id="log-box" class="log-container">
                     <!-- Logs serão inseridos aqui pelo JavaScript -->
@@ -369,9 +405,6 @@
         let historicoDados = [];
         let ultimaLeituraEnergia = { tensao: "0.0", corrente: "0.0", potencia: "0.0" };
         let alarmeTempAtivo = false;
-        
-        // NOVO: Variável de Controle Global para o Setpoint
-        let setpointGlobal = 25.0; 
 
         function registrarLog(mensagem, tipo = 'INFO') {
             const logBox = document.getElementById('log-box');
@@ -491,22 +524,31 @@
                     const dados = JSON.parse(message.toString());
                     const tempRecebida = parseFloat(dados.temp ?? dados.temperatura);
                     
-                    // LÓGICA DO SETPOINT GLOBAL
-                    // Atualiza pelo dado que vem do ESP32 caso exista
-                    if (dados.setpoint !== undefined || dados.sp !== undefined) {
-                        setpointGlobal = parseFloat(dados.setpoint ?? dados.sp);
-                        
-                        // Atualiza a tela APENAS se o usuário não estiver digitando na caixa no momento
-                        const inputSetpoint = document.getElementById('setpoint');
-                        if (document.activeElement !== inputSetpoint) {
-                            inputSetpoint.value = setpointGlobal;
-                        }
+                    // Atualiza a visualização do Setpoint recebido
+                    let setpointAtual = parseFloat(document.getElementById('setpoint').value); 
+                    if (dados.setp !== undefined) {
+                        setpointAtual = parseFloat(dados.setp);
+                        document.getElementById('atual-setp').innerText = setpointAtual.toFixed(1);
+                    }
+
+                    // Atualiza a visualização do Kp recebido
+                    if (dados.kp !== undefined) {
+                        document.getElementById('atual-kp').innerText = parseFloat(dados.kp).toFixed(2);
+                    }
+
+                    // Atualiza a visualização do Ki recebido
+                    if (dados.ki !== undefined) {
+                        document.getElementById('atual-ki').innerText = parseFloat(dados.ki).toFixed(2);
+                    }
+
+                    // Atualiza a visualização do Kd recebido
+                    if (dados.kd !== undefined) {
+                        document.getElementById('atual-kd').innerText = parseFloat(dados.kd).toFixed(2);
                     }
                     
                     if (!isNaN(tempRecebida)) {
-                        // Usa setpointGlobal no gráfico e no datalogger
-                        addDataDouble(tempChart, horaFormatada, tempRecebida, setpointGlobal);
-                        document.getElementById('thermo-text').innerText = tempRecebida + ' °C';
+                        addDataDouble(tempChart, horaFormatada, tempRecebida, setpointAtual);
+                        document.getElementById('thermo-text').innerText = tempRecebida.toFixed(1) + ' °C';
 
                         let alturaBarra = (tempRecebida / 50) * 100; 
                         if(alturaBarra > 100) alturaBarra = 100;
@@ -516,23 +558,23 @@
                         document.getElementById('led-lamp').className = (dados.lamp > 0 || dados.lampada > 0) ? 'led lamp-on' : 'led';
                         document.getElementById('led-fan').className = (dados.fan > 0 || dados.ventoinha > 0) ? 'led fan-on' : 'led';
 
-                        // SISTEMA DE ALARMES: Verifica limite usando a variável global
-                        if (tempRecebida > (setpointGlobal + 2.0)) {
+                        // SISTEMA DE ALARMES
+                        if (tempRecebida > (setpointAtual + 2.0)) {
                             if (!alarmeTempAtivo) {
                                 registrarLog(`Temperatura excedeu o setpoint em mais de 2°C! (${tempRecebida}°C)`, 'ALERTA');
                                 alarmeTempAtivo = true;
                             }
-                        } else if (tempRecebida <= (setpointGlobal + 0.5)) {
+                        } else if (tempRecebida <= (setpointAtual + 0.5)) {
                             if (alarmeTempAtivo) {
                                 registrarLog(`Temperatura normalizada para ${tempRecebida}°C.`, 'SUCESSO');
                                 alarmeTempAtivo = false;
                             }
                         }
 
-                        // DATALOGGER: Usa o Setpoint Global
+                        // DATALOGGER
                         historicoDados.push({
                             tempo: horaFormatada,
-                            setpoint: setpointGlobal,
+                            setpoint: setpointAtual,
                             temperatura: tempRecebida,
                             lampada: dados.lamp ?? dados.lampada ?? 0,
                             ventoinha: dados.fan ?? dados.ventoinha ?? 0,
@@ -566,15 +608,15 @@
                     if(!isNaN(tensao)) {
                         addDataSingle(voltChart, horaFormatada, tensao);
                         document.getElementById('val-volt').innerText = tensao.toFixed(1) + ' V';
-                        ultimaLeituraEnergia.tensao = tensao; 
+                        ultimaLeituraEnergia.tensao = tensao;
                     }
                     if(!isNaN(corrente)) {
                         addDataSingle(currChart, horaFormatada, corrente);
                         document.getElementById('val-curr').innerText = corrente.toFixed(2) + ' A';
-                        ultimaLeituraEnergia.corrente = corrente; 
+                        ultimaLeituraEnergia.corrente = corrente;
                     }
                     if(!isNaN(potencia)) {
-                        ultimaLeituraEnergia.potencia = potencia; 
+                        ultimaLeituraEnergia.potencia = potencia;
                     }
 
                 } catch (e) {
@@ -583,12 +625,9 @@
             }
         });
 
-        // Evento de Envio: Atualiza a variável Global antes de disparar pro ESP32
         btn.addEventListener('click', () => {
-            setpointGlobal = parseFloat(document.getElementById('setpoint').value);
-            
             const dadosPID = {
-                setpoint: setpointGlobal,
+                setpoint: parseFloat(document.getElementById('setpoint').value),
                 kp: parseFloat(document.getElementById('kp').value),
                 ki: parseFloat(document.getElementById('ki').value),
                 kd: parseFloat(document.getElementById('kd').value)
