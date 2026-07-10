@@ -245,7 +245,6 @@
         <button onclick="switchScreen('controle')">Monitor de Temperatura</button>
         <button onclick="switchScreen('pzem-screen')">Monitor de Energia</button>
         
-        
         <hr class="divider">
         
         <button onclick="exportarCSV()" style="color: #2ecc71; font-weight: bold;">📥 Exportar CSV</button>
@@ -357,7 +356,7 @@
                     </div>
                     <div class="input-group">
                         <label>Consumo de Energia</label>
-                        <div id="val-energy" class="value-display">-- kWh</div>
+                        <div id="val-energy" class="value-display">-- Wh</div>
                     </div>
                     <div class="input-group">
                         <label>Frequência</label>
@@ -415,7 +414,7 @@
 
         // --- SISTEMA DE LOGS E DATALOGGER ---
         let historicoDados = [];
-        let ultimaLeituraEnergia = { tensao: "0.0", corrente: "0.0", potencia: "0.0" };
+        let ultimaLeituraEnergia = { tensao: "0.0", corrente: "0.0", potencia: "0.0", energia: "0.0" };
         let alarmeTempAtivo = false;
 
         function registrarLog(mensagem, tipo = 'INFO') {
@@ -442,9 +441,11 @@
                 return;
             }
 
-            let csvContent = "Hora,Setpoint(C),Temperatura(C),Lampada(%),Ventoinha(%),Tensao(V),Corrente(A),Potencia(W)\n";
+            // Cabeçalho atualizado com Energia(kWh)
+            let csvContent = "Hora,Setpoint(C),Temperatura(C),Lampada(%),Ventoinha(%),Tensao(V),Corrente(A),Potencia(W),Energia(Wh)\n";
             historicoDados.forEach(row => {
-                csvContent += `${row.tempo},${row.setpoint},${row.temperatura},${row.lampada},${row.ventoinha},${row.tensao},${row.corrente},${row.potencia}\n`;
+                // Linha atualizada com o valor da energia
+                csvContent += `${row.tempo},${row.setpoint},${row.temperatura},${row.lampada},${row.ventoinha},${row.tensao},${row.corrente},${row.potencia},${row.energia}\n`;
             });
 
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -452,7 +453,7 @@
             const link = document.createElement("a");
             
             link.setAttribute("href", url);
-            link.setAttribute("download", "historico_ensaio_pid.csv");
+            link.setAttribute("download", "historico.csv");
             
             document.body.appendChild(link);
             link.click();
@@ -592,7 +593,8 @@
                             ventoinha: dados.fan ?? dados.ventoinha ?? 0,
                             tensao: ultimaLeituraEnergia.tensao,
                             corrente: ultimaLeituraEnergia.corrente,
-                            potencia: ultimaLeituraEnergia.potencia
+                            potencia: ultimaLeituraEnergia.potencia,
+                            energia: ultimaLeituraEnergia.energia // Energia adicionada aqui!
                         });
                     }
                 } catch (e) {
@@ -613,7 +615,12 @@
                     const fp       = parseFloat(pzemDados.pf ?? pzemDados.fator_potencia ?? pzemDados.fp ?? pzemDados.FP ?? pzemDados.power_factor);
 
                     if(!isNaN(potencia)) document.getElementById('val-power').innerText = potencia.toFixed(1) + ' W';
-                    if(!isNaN(energia))  document.getElementById('val-energy').innerText = energia.toFixed(3) + ' kWh';
+                    
+                    if(!isNaN(energia)) {
+                        document.getElementById('val-energy').innerText = energia.toFixed(3) + ' Wh';
+                        ultimaLeituraEnergia.energia = energia; // Salvando a última energia lida
+                    }
+                    
                     if(!isNaN(freq))     document.getElementById('val-freq').innerText = freq.toFixed(1) + ' Hz';
                     if(!isNaN(fp))       document.getElementById('val-pf').innerText = fp.toFixed(2);
 
