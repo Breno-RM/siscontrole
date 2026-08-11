@@ -17,19 +17,17 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             height: 100vh;
-            background-color: #121212; /* Dark background */
+            background-color: #121212; /* Fundo escuro */
             color: #e0e0e0;
-            transition: background-color 0.3s, color 0.3s;
         }
         .sidebar {
             width: 250px;
-            background-color: #1e1e1e; /* Darker sidebar */
+            background-color: #1e1e1e; /* Sidebar mais escura */
             color: white;
             display: flex;
             flex-direction: column;
             padding-top: 20px;
             border-right: 1px solid #333;
-            transition: background-color 0.3s, border-color 0.3s;
         }
         .sidebar h2 {
             text-align: center;
@@ -55,7 +53,6 @@
             margin: 20px 0;
             border: 0;
             border-top: 1px solid #333;
-            transition: border-color 0.3s;
         }
         .main-content {
             flex: 1;
@@ -66,13 +63,12 @@
         .screen.active { display: block; }
         
         .card {
-            background: #1e1e1e; /* Dark cards */
+            background: #1e1e1e; /* Cards escuros */
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             margin-bottom: 20px;
             border: 1px solid #333;
-            transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
         }
         h3 { 
             color: #3498db; 
@@ -114,7 +110,7 @@
             width: 25px;
             height: 25px;
             border-radius: 50%;
-            background-color: #444; /* Dark off state */
+            background-color: #444; /* Desligado escuro */
             transition: all 0.3s ease;
         }
         .led.lamp-on {
@@ -142,7 +138,6 @@
             overflow: hidden;
             display: flex;
             align-items: flex-end;
-            transition: background-color 0.3s, border-color 0.3s;
         }
         .thermometer-fluid {
             width: 100%;
@@ -154,7 +149,6 @@
             font-size: 24px;
             font-weight: bold;
             color: #e0e0e0;
-            transition: color 0.3s;
         }
 
         .form-grid {
@@ -171,7 +165,6 @@
             font-weight: bold;
             color: #aaa;
             font-size: 14px;
-            transition: color 0.3s;
         }
         .input-group input {
             padding: 10px;
@@ -180,7 +173,6 @@
             color: white;
             border-radius: 4px;
             font-size: 16px;
-            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
         }
         .value-display {
             font-size: 20px;
@@ -191,7 +183,6 @@
             border-radius: 5px;
             text-align: center;
             border: 1px solid #444;
-            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
         }
         .value-display.small-font {
             font-size: 18px;
@@ -222,7 +213,6 @@
             font-weight: bold;
             color: #aaa;
             margin-bottom: 20px;
-            transition: color 0.3s;
         }
         .chart-container {
             position: relative;
@@ -230,7 +220,7 @@
             width: 100%;
         }
 
-        /* Event Log Style */
+        /* Estilo do Event Log */
         .log-container {
             height: 180px;
             background-color: #000;
@@ -240,73 +230,70 @@
             border-radius: 5px;
             overflow-y: auto;
             border: 1px solid #333;
-            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
         }
         .log-entry { margin-bottom: 5px; font-size: 14px; }
-        .log-info { color: #569cd6; } /* Blue */
-        .log-alert { color: #f44747; font-weight: bold; } /* Red */
-        .log-success { color: #4CAF50; } /* Green */
-
-        /* Light Theme Styles */
-        body.light-mode {
-            background-color: #f4f6f9;
-            color: #2c3e50;
+        .log-info { color: #569cd6; } /* Azul */
+        .log-alert { color: #f44747; font-weight: bold; } /* Vermelho */
+        .log-success { color: #4CAF50; } /* Verde */
+        
+    
+        /* Theme support */
+        body.light-theme {
+            background-color: #f4f6f8;
+            color: #222;
         }
-        body.light-mode .sidebar {
+        body.light-theme .sidebar {
             background-color: #ffffff;
-            border-right: 1px solid #e0e0e0;
-            color: #2c3e50;
+            color: #222;
+            border-right: 1px solid #ddd;
         }
-        body.light-mode .sidebar h2 {
-            color: #2980b9;
+        body.light-theme .sidebar button {
+            color: #444;
         }
-        body.light-mode .sidebar button {
+        body.light-theme .sidebar button:hover {
+            background-color: #eaf2f8;
+            color: #222;
+        }
+        body.light-theme .sidebar .divider {
+            border-top-color: #ddd;
+        }
+        body.light-theme .card {
+            background: #ffffff;
+            border-color: #ddd;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+        body.light-theme .input-group label {
             color: #555;
         }
-        body.light-mode .sidebar button:hover {
-            background-color: #ecf0f1;
-            color: #2980b9;
+        body.light-theme .input-group input,
+        body.light-theme .value-display {
+            background: #f7f7f7;
+            border-color: #ccc;
+            color: #222;
         }
-        body.light-mode .sidebar .divider {
-            border-top: 1px solid #e0e0e0;
-        }
-        body.light-mode .card {
-            background: #ffffff;
-            border: 1px solid #e0e0e0;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        }
-        body.light-mode .thermometer-glass {
-            background: #e0e0e0;
+        body.light-theme .thermometer-glass {
+            background: #e9e9e9;
             border-color: #ccc;
         }
-        body.light-mode .thermometer-text {
-            color: #2c3e50;
+        body.light-theme .thermometer-text {
+            color: #222;
         }
-        body.light-mode .input-group label {
+        body.light-theme #status {
             color: #666;
         }
-        body.light-mode .input-group input {
-            background: #f8f9fa;
-            border: 1px solid #ccc;
-            color: #2c3e50;
+        body.light-theme .log-container {
+            background: #f5f5f5;
+            color: #333;
+            border-color: #ccc;
         }
-        body.light-mode .value-display {
-            background: #f8f9fa;
-            border: 1px solid #ccc;
-            color: #2c3e50;
+        .theme-button {
+            margin-top: auto !important;
+            margin-bottom: 20px;
+            border-top: 1px solid #333 !important;
         }
-        body.light-mode .led {
-            background-color: #ccc;
+        body.light-theme .theme-button {
+            border-top-color: #ddd !important;
         }
-        body.light-mode .log-container {
-            background-color: #f8f9fa;
-            color: #2c3e50;
-            border: 1px solid #ccc;
-        }
-        body.light-mode .log-info { color: #0056b3; }
-        body.light-mode .log-alert { color: #d9534f; font-weight: bold; }
-        body.light-mode .log-success { color: #28a745; }
-        
     </style>
 </head>
 <body>
@@ -318,20 +305,22 @@
         
         <hr class="divider">
         
-        <button onclick="toggleTheme()" id="themeToggleBtn">☀️ Light Theme</button>
         <button onclick="exportarCSV()" style="color: #2ecc71; font-weight: bold;">📥 Export CSV</button>
+
+        <button id="themeToggle" class="theme-button" onclick="toggleTheme()">☀️ Light Theme</button>
+
     </div>
 
     <div class="main-content">
         <div id="status">Status: Disconnected</div>
 
-        <!-- SCREEN 1: PID -->
+        <!-- TELA 1: PID -->
         <div id="controle" class="screen active">
             <div class="top-panel">
                 
-                <!-- Left Column: Inputs + Readings -->
+                <!-- Coluna da Esquerda: Inputs + Leituras -->
                 <div class="params-column">
-                    <!-- Send Panel (Input only) -->
+                    <!-- Painel de Envio (Apenas para digitar) -->
                     <div class="card" style="margin-bottom: 0;">
                         <h3>Control Parameters</h3>
                         <div class="form-grid">
@@ -355,7 +344,7 @@
                         <button id="btnEnviar" class="btn-primary" disabled>Connecting to HiveMQ...</button>
                     </div>
 
-                    <!-- Feedback Panel (Displays current values on ESP32) -->
+                    <!-- Painel de Feedback (Apenas para exibir o que está no ESP32) -->
                     <div class="card" style="margin-bottom: 0;">
                         <h3>Current Controller Values</h3>
                         <div class="form-grid" style="grid-template-columns: repeat(4, 1fr);">
@@ -379,7 +368,7 @@
                     </div>
                 </div>
 
-                <!-- Right Column: Thermometer and LEDs -->
+                <!-- Coluna da Direita: Termômetro e LEDs -->
                 <div class="card status-panel">
                     <div class="thermometer-container">
                         <div class="thermometer-glass">
@@ -408,16 +397,16 @@
                 </div>
             </div>
 
-            <!-- Alarm and Event Log -->
+            <!-- Log de Alarmes e Eventos -->
             <div class="card">
                 <h3>Event Log</h3>
                 <div id="log-box" class="log-container">
-                    <!-- Logs will be inserted here by JavaScript -->
+                    <!-- Logs serão inseridos aqui pelo JavaScript -->
                 </div>
             </div>
         </div>
 
-        <!-- SCREEN 2: PZEM / ENERGY -->
+        <!-- TELA 2: PZEM / ENERGIA -->
         <div id="pzem-screen" class="screen">
             <div class="card">
                 <h3>Instantaneous Measurements (PZEM)</h3>
@@ -442,7 +431,7 @@
             </div>
 
             <div class="form-grid">
-                <!-- Voltage Chart -->
+                <!-- Gráfico de Tensão -->
                 <div class="card">
                     <h3>Voltage (V)</h3>
                     <div class="chart-container" style="height: 300px;">
@@ -450,7 +439,7 @@
                     </div>
                     <div id="val-volt" class="value-display" style="margin-top: 15px;">-- V</div>
                 </div>
-                <!-- Current Chart -->
+                <!-- Gráfico de Corrente -->
                 <div class="card">
                     <h3>Current (A)</h3>
                     <div class="chart-container" style="height: 300px;">
@@ -461,22 +450,22 @@
             </div>
         </div>
 
-        <!-- SCREEN 3: SETTINGS -->
+        <!-- TELA 3: CONFIGURAÇÕES -->
         <div id="config" class="screen">
             <div class="card">
                 <h3>Other Settings</h3>
-                <p>Here you can add other buttons or status options for your project in the future.</p>
+                <p>You can add other buttons or project status information here in the future.</p>
             </div>
         </div>
 
     </div>
 
     <script>
-        // Global Chart.js Configuration for Dark Theme by Default
+        // Configuração global do Chart.js para Tema Escuro
         Chart.defaults.color = '#aaaaaa';
         Chart.defaults.borderColor = '#333333';
 
-        // --- Screen Switcher ---
+        // --- Navegação entre Telas ---
         function switchScreen(screenId) {
             document.querySelectorAll('.screen').forEach(screen => {
                 screen.classList.remove('active');
@@ -484,38 +473,35 @@
             document.getElementById(screenId).classList.add('active');
         }
 
-        // --- Theme Switcher ---
-        function toggleTheme() {
-            document.body.classList.toggle('light-mode');
-            const isLight = document.body.classList.contains('light-mode');
-            const themeBtn = document.getElementById('themeToggleBtn');
-            themeBtn.innerText = isLight ? '🌙 Dark Theme' : '☀️ Light Theme';
 
-            // Dynamic Chart Color Update
-            const textColor = isLight ? '#2c3e50' : '#aaaaaa';
-            const gridColor = isLight ? '#e0e0e0' : '#333333';
-
-            [tempChart, voltChart, currChart].forEach(chart => {
-                chart.options.scales.x.ticks = chart.options.scales.x.ticks || {};
-                chart.options.scales.x.ticks.color = textColor;
-                chart.options.scales.x.grid = chart.options.scales.x.grid || {};
-                chart.options.scales.x.grid.color = gridColor;
-
-                chart.options.scales.y.ticks = chart.options.scales.y.ticks || {};
-                chart.options.scales.y.ticks.color = textColor;
-                chart.options.scales.y.grid = chart.options.scales.y.grid || {};
-                chart.options.scales.y.grid.color = gridColor;
-
-                if (chart.options.plugins && chart.options.plugins.legend) {
-                    chart.options.plugins.legend.labels = chart.options.plugins.legend.labels || {};
-                    chart.options.plugins.legend.labels.color = textColor;
-                }
-
-                chart.update();
-            });
+        // --- Theme switcher ---
+        function updateThemeButton() {
+            const button = document.getElementById('themeToggle');
+            const light = document.body.classList.contains('light-theme');
+            button.innerText = light ? '🌙 Dark Theme' : '☀️ Light Theme';
         }
 
-        // --- LOG SYSTEM & DATALOGGER ---
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+            const isLight = document.body.classList.contains('light-theme');
+            localStorage.setItem('dashboardTheme', isLight ? 'light' : 'dark');
+
+            // Update Chart.js defaults and existing charts
+            Chart.defaults.color = isLight ? '#555555' : '#aaaaaa';
+            Chart.defaults.borderColor = isLight ? '#dddddd' : '#333333';
+
+            [tempChart, voltChart, currChart].forEach(chart => chart.update());
+            updateThemeButton();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('dashboardTheme') === 'light') {
+                document.body.classList.add('light-theme');
+            }
+            updateThemeButton();
+        });
+
+        // --- SISTEMA DE LOGS E DATALOGGER ---
         let historicoDados = [];
         let ultimaLeituraEnergia = { tensao: "0.0", corrente: "0.0", potencia: "0.0", energia: "0.0" };
         let alarmeTempAtivo = false;
@@ -540,13 +526,14 @@
 
         function exportarCSV() {
             if (historicoDados.length === 0) {
-                alert("No data recorded yet to export.");
+                alert("No data has been recorded yet for export.");
                 return;
             }
 
-            // Updated Header with Energy (Wh)
-            let csvContent = "Time,Setpoint(C),Temperature(C),Lamp(%),Fan(%),Voltage(V),Current(A),Power(W),Energy(Wh)\n";
+            // Cabeçalho atualizado com Energia(kWh)
+            let csvContent = "Hora,Setpoint(C),Temperatura(C),Lampada(%),Fan(%),Tensao(V),Corrente(A),Potencia(W),Energia(Wh)\n";
             historicoDados.forEach(row => {
+                // Linha atualizada com o valor da energia
                 csvContent += `${row.tempo},${row.setpoint},${row.temperatura},${row.lampada},${row.ventoinha},${row.tensao},${row.corrente},${row.potencia},${row.energia}\n`;
             });
 
@@ -555,7 +542,7 @@
             const link = document.createElement("a");
             
             link.setAttribute("href", url);
-            link.setAttribute("download", "history.csv");
+            link.setAttribute("download", "historico.csv");
             
             document.body.appendChild(link);
             link.click();
@@ -564,7 +551,7 @@
             registrarLog('CSV file exported successfully.', 'SUCCESS');
         }
 
-        // --- Chart Configurations ---
+        // --- Configuração dos Gráficos ---
         const ctxTemp = document.getElementById('tempChart').getContext('2d');
         const tempChart = new Chart(ctxTemp, {
             type: 'line',
@@ -598,7 +585,7 @@
             chart.update();
         }
 
-        // --- MQTT Configuration ---
+        // --- Configuração MQTT ---
         const host = '0e30f6e5a0a84184a8cc1139f3c59545.s1.eu.hivemq.cloud';
         const port = '8884';
         const connectUrl = `wss://${host}:${port}/mqtt`;
@@ -622,41 +609,41 @@
             statusDiv.style.color = '#2ecc71';
             btn.innerText = 'Send Parameters';
             btn.disabled = false;
-            registrarLog('Connected to HiveMQ broker successfully.', 'SUCCESS');
+            registrarLog('Conectado ao broker HiveMQ com sucesso.', 'SUCCESS');
 
             client.subscribe(TOPICO_PID_STATUS);
             client.subscribe(TOPICO_PZEM_DATA);
         });
 
-        // Handle Incoming Messages
+        // Manipula mensagens recebidas
         client.on('message', (topic, message) => {
             const agora = new Date();
             const horaFormatada = `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}:${String(agora.getSeconds()).padStart(2, '0')}`;
 
-            // ---- PID LOGIC (Temperature) ----
+            // ---- LÓGICA DO PID (Temperatura) ----
             if (topic === TOPICO_PID_STATUS) {
                 try {
                     const dados = JSON.parse(message.toString());
                     const tempRecebida = parseFloat(dados.temp ?? dados.temperatura);
                     
-                    // Update display of received Setpoint
+                    // Atualiza a visualização do Setpoint recebido
                     let setpointAtual = parseFloat(document.getElementById('setpoint').value); 
                     if (dados.setp !== undefined) {
                         setpointAtual = parseFloat(dados.setp);
                         document.getElementById('atual-setp').innerText = setpointAtual.toFixed(1);
                     }
 
-                    // Update display of received Kp
+                    // Atualiza a visualização do Kp recebido
                     if (dados.kp !== undefined) {
                         document.getElementById('atual-kp').innerText = parseFloat(dados.kp).toFixed(2);
                     }
 
-                    // Update display of received Ki
+                    // Atualiza a visualização do Ki recebido
                     if (dados.ki !== undefined) {
                         document.getElementById('atual-ki').innerText = parseFloat(dados.ki).toFixed(2);
                     }
 
-                    // Update display of received Kd
+                    // Atualiza a visualização do Kd recebido
                     if (dados.kd !== undefined) {
                         document.getElementById('atual-kd').innerText = parseFloat(dados.kd).toFixed(2);
                     }
@@ -673,10 +660,10 @@
                         document.getElementById('led-lamp').className = (dados.lamp > 0 || dados.lampada > 0) ? 'led lamp-on' : 'led';
                         document.getElementById('led-fan').className = (dados.fan > 0 || dados.ventoinha > 0) ? 'led fan-on' : 'led';
 
-                        // ALARM SYSTEM
+                        // SISTEMA DE ALARMES
                         if (tempRecebida > (setpointAtual + 2.0)) {
                             if (!alarmeTempAtivo) {
-                                registrarLog(`Temperature exceeded setpoint by more than 2°C! (${tempRecebida}°C)`, 'ALERT');
+                                registrarLog(`Temperature exceeded the setpoint by more than 2°C! (${tempRecebida}°C)`, 'ALERT');
                                 alarmeTempAtivo = true;
                             }
                         } else if (tempRecebida <= (setpointAtual + 0.5)) {
@@ -696,15 +683,15 @@
                             tensao: ultimaLeituraEnergia.tensao,
                             corrente: ultimaLeituraEnergia.corrente,
                             potencia: ultimaLeituraEnergia.potencia,
-                            energia: ultimaLeituraEnergia.energia
+                            energia: ultimaLeituraEnergia.energia // Energia adicionada aqui!
                         });
                     }
                 } catch (e) {
-                    console.error("PID JSON Error:", e);
+                    console.error("PID JSON error:", e);
                 }
             }
             
-            // ---- PZEM LOGIC (Energy) ----
+            // ---- LÓGICA DO PZEM (Energia) ----
             else if (topic === TOPICO_PZEM_DATA) {
                 try {
                     const pzemDados = JSON.parse(message.toString());
@@ -720,7 +707,7 @@
                     
                     if(!isNaN(energia)) {
                         document.getElementById('val-energy').innerText = energia.toFixed(3) + ' Wh';
-                        ultimaLeituraEnergia.energia = energia;
+                        ultimaLeituraEnergia.energia = energia; // Salvando a última energia lida
                     }
                     
                     if(!isNaN(freq))     document.getElementById('val-freq').innerText = freq.toFixed(1) + ' Hz';
@@ -741,7 +728,7 @@
                     }
 
                 } catch (e) {
-                    console.error("PZEM JSON Error:", e);
+                    console.error("PZEM JSON error:", e);
                 }
             }
         });
@@ -775,9 +762,8 @@
             statusDiv.style.color = '#e74c3c';
             btn.disabled = true;
             btn.innerText = 'Connecting to HiveMQ...';
-            registrarLog('MQTT broker connection failure.', 'ALERT');
+            registrarLog('Connection to the MQTT broker failed.', 'ALERT');
         });
     </script>
 </body>
 </html>
-```[cite: 1]
